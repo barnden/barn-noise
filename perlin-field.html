@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body style="background: #16161D;">
+    <canvas id="can" width="1024", height="1024"></canvas>
+
+    <script src="noise.js"></script>
+    <script>
+        let canvas = document.getElementById("can")
+        let context = canvas.getContext("2d")
+        let img = context.getImageData(0, 0, canvas.width, canvas.height)
+
+        let p = [...new Array(256).keys()]
+        .map((v, _, a, j = random(255)) => [a[j], a[j] = v][0])
+        let pl = new Perlin(new Array(512).fill(0).map((_, i) => p[i & 255]), random_float() * random(256))
+
+        for (let j = 0; j < canvas.width * canvas.height; j++) {
+                let x = (j % canvas.width) / canvas.width * 12
+                let y = (j / canvas.width) / canvas.height * 12
+
+                let i = j * 4
+                let magnitude = pl.get(x, y)
+                let intensity = Math.floor(255 / (1 + Math.exp(-2.5 * magnitude)))
+
+                img.data[i] = img.data[i + 1] = img.data[i + 2] = intensity
+                img.data[i + 3] = 255
+            }
+
+        context.putImageData(img, 0, 0)
+
+        if (false) {
+
+        let threads = 4
+        let barn = new Barn(threads)
+
+        let pixels = canvas.height * canvas.width
+        let queues = []
+
+        let j = 0
+        for (let i = 0; i < threads; i++) {
+            let queue = []
+            let max = (i == threads - 1) ? pixels : j + Math.floor(pixels / threads)
+            for (; j < max; j++) {
+                let x = (j % canvas.width) / canvas.width * 12
+                let y = (j / canvas.width) / canvas.height * 12
+
+                queue.push([j, x, y])
+            }
+
+            queues.push(queue)
+        }
+
+        let count = 0
+
+        function puts() {
+            if (++count != threads) return
+
+            context.putImageData(img, 0, 0)
+            console.log(performance.now() - start)
+        }
+
+        let start = performance.now()
+
+        queues.forEach(q => {
+            noise(data => {
+                while (data[1].length) {
+                    let [index, magnitude] = data[1].splice(0, 1)[0]
+                    let j = index * 4
+                    let intensity = Math.floor(255 / (1 + Math.exp(-2.5 * magnitude)))
+
+                    img.data[j] = img.data[j + 1] = img.data[j + 2] = intensity
+                    img.data[j + 3] = 255
+                }
+
+                puts()
+            }, {
+                func: "perlin",
+                pos: q
+            })
+        })
+        }
+    </script>
+</body>
+</html>

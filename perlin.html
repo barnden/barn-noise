@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1080, initial-scale=1.0">
+    <title>curl noise vector field</title>
+    <style>
+        body, html {
+            background: #16161D;
+            padding: 0; margin: 0;
+            overflow: hidden;
+
+            height: 100%;
+        }
+
+        #container {
+            display: flex;
+
+            justify-content: center;
+            align-items: center;
+
+            height: 100%;
+        }
+
+        #can { width: 450px; height: 450px; border: 1px solid white; }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <canvas id="can" width="450" height="450"></canvas>
+    </div>
+    <script src="noise.js"></script>
+    <script src="particle.js"></script>
+    <script>
+        particle({
+            canvas_name: "can",
+            func: "perlin",
+            scale: 8,
+            particle_count: 256,
+            time: 6000,
+            queue_hook: q => {
+                let pos = []
+
+                q.forEach((p, i) => {
+                    pos.push([i, ...p.pos])
+                    pos.push([i, p.pos[0] + Math.E, p.pos[1] + Math.PI])
+                })
+
+                return pos
+            },
+            noise_hook: data => {
+                let c = data.splice(0, 2)
+
+                return [[c[0][0], [c[0][1], c[1][1]]], data]
+            },
+            move_hook: vec => vec.map(e => e / 5)
+        })()
+    </script>
+</body>
+</html>
